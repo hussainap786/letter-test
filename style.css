@@ -1,0 +1,876 @@
+/* =========================================================================
+   A SPECIAL DELIVERY — stylesheet
+   Design tokens live at the top. Change colors/fonts there and everything
+   below follows.
+   ========================================================================= */
+
+:root {
+  /* palette */
+  --navy-deep:  #0d0e1c;
+  --navy-mid:   #171b3a;
+  --navy-light: #2b2757;
+  --gold:       #d9b872;
+  --gold-soft:  #f0dfa8;
+  --cream:      #faf3e4;
+  --cream-dim:  #e9dfc7;
+  --blush:      #e8b7c2;
+  --ink:        #3b2f2a;
+
+  /* type */
+  --font-script: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-body:   'EB Garamond', Georgia, serif;
+  --font-hand:   'Dancing Script', cursive;
+
+  /* rhythm */
+  --gap: clamp(14px, 4vw, 28px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--navy-deep);
+  color: var(--cream);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+/* =========================================================================
+   SKY — persistent background across every scene
+   ========================================================================= */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(120% 90% at 50% 100%, var(--navy-light) 0%, var(--navy-mid) 45%, var(--navy-deep) 100%);
+  overflow: hidden;
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, var(--gold-soft), transparent),
+    radial-gradient(1.5px 1.5px at 70% 20%, var(--gold-soft), transparent),
+    radial-gradient(1px 1px at 40% 70%, var(--cream), transparent),
+    radial-gradient(1.5px 1.5px at 85% 60%, var(--gold-soft), transparent),
+    radial-gradient(1px 1px at 10% 80%, var(--cream), transparent),
+    radial-gradient(1.5px 1.5px at 55% 45%, var(--gold-soft), transparent),
+    radial-gradient(1px 1px at 90% 85%, var(--cream), transparent),
+    radial-gradient(1.5px 1.5px at 30% 55%, var(--gold-soft), transparent),
+    radial-gradient(1px 1px at 65% 90%, var(--cream), transparent),
+    radial-gradient(1.5px 1.5px at 5% 15%, var(--gold-soft), transparent);
+  background-repeat: repeat;
+  background-size: 340px 340px;
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+
+.stars--far {
+  background-size: 500px 500px;
+  opacity: 0.5;
+  animation-duration: 7s;
+  animation-delay: 1s;
+}
+
+@keyframes twinkle {
+  from { opacity: 0.55; }
+  to   { opacity: 1; }
+}
+
+.moon {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  width: min(24vw, 110px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, #fffdf3, #f0dfa8 75%);
+  box-shadow:
+    22px -12px 0 0 var(--navy-mid) inset,
+    0 0 45px 12px rgba(240, 223, 168, 0.3);
+  animation: float-moon 8s ease-in-out infinite;
+}
+
+.moon__crater {
+  position: absolute;
+  border-radius: 50%;
+  background: #e9d19c;
+  opacity: 0.45;
+}
+.moon__crater--a { width: 10%; height: 10%; top: 30%; left: 30%; }
+.moon__crater--b { width: 14%; height: 14%; top: 55%; left: 45%; opacity: 0.35; }
+
+@keyframes float-moon {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* =========================================================================
+   PETALS — falling lily petals, elements injected by script.js
+   ========================================================================= */
+
+.petals {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.petal {
+  position: absolute;
+  top: -10vh;
+  width: 14px;
+  height: 20px;
+  background: linear-gradient(160deg, #fffdf7, var(--cream-dim));
+  border-radius: 50% 50% 50% 4%;
+  opacity: 0.9;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes fall {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+  50%  { transform: translateY(55vh) translateX(20px) rotate(180deg); }
+  100% { transform: translateY(115vh) translateX(-15px) rotate(360deg); }
+}
+
+/* =========================================================================
+   SCENE SYSTEM
+   ========================================================================= */
+
+#stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.scene {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+}
+
+.scene--active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.scene__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap);
+  max-width: 480px;
+  width: 100%;
+}
+
+.scene__inner--ground { justify-content: flex-end; height: 100%; padding-bottom: 8vh; }
+.scene__inner--letter { justify-content: center; }
+
+/* =========================================================================
+   TYPOGRAPHY
+   ========================================================================= */
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--blush);
+  opacity: 0.85;
+}
+
+.script-heading {
+  margin: 0;
+  font-family: var(--font-script);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(2.4rem, 10vw, 3.6rem);
+  color: var(--cream);
+  text-shadow: 0 0 40px rgba(233, 197, 152, 0.25);
+}
+
+.welcome-line {
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+  color: var(--gold-soft);
+  animation: fade-in 2s ease forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.caption {
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1.3rem;
+  color: var(--cream-dim);
+}
+
+.caption--tap {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.9; }
+}
+
+.closing-line {
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  color: var(--cream-dim);
+  margin: 0;
+}
+
+.closing-line--emph {
+  color: var(--blush);
+  font-weight: 600;
+  margin-top: 0.4em;
+}
+
+/* =========================================================================
+   BUTTONS
+   ========================================================================= */
+
+.btn {
+  padding: 0.9em 2em;
+  border-radius: 999px;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+  color: var(--navy-deep);
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(217, 184, 114, 0.35);
+}
+
+.btn--primary:active { transform: scale(0.96); }
+
+.btn--ghost {
+  border: 1px solid rgba(240, 223, 168, 0.5);
+  color: var(--gold-soft);
+  background: rgba(255,255,255,0.03);
+}
+
+.btn--ghost:active { transform: scale(0.96); background: rgba(255,255,255,0.08); }
+
+.btn--restart { margin-top: 1rem; }
+
+.link-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.btn--link {
+  width: 100%;
+  border: 1px solid rgba(232, 183, 194, 0.4);
+  color: var(--cream);
+  background: rgba(232, 183, 194, 0.08);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+}
+
+.btn--link:active { transform: scale(0.98); }
+
+.btn__icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   SCENE 2 — POSTMAN
+   ========================================================================= */
+
+.speech-bubble {
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 18px;
+  padding: 0.9em 1.2em;
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1.15rem;
+  max-width: 320px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  position: relative;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0 10px;
+  border-style: solid;
+  border-color: var(--cream) transparent transparent transparent;
+}
+
+.speech-bubble--show { opacity: 1; transform: translateY(0) scale(1); }
+.speech-bubble--hide { opacity: 0; transform: translateY(10px) scale(0.95); }
+
+.postman-hit {
+  padding: 0;
+  display: block;
+}
+
+.postman-wrap {
+  position: relative;
+  width: min(46vw, 190px);
+  transform: translateX(-120vw);
+}
+
+.postman-wrap--walking-in {
+  animation: walk-in 3.4s cubic-bezier(0.45, 0, 0.4, 1) forwards;
+}
+
+.postman-wrap--walking-out {
+  animation: walk-out 2.6s cubic-bezier(0.45, 0, 0.4, 1) forwards;
+}
+
+@keyframes walk-in {
+  0%   { transform: translateX(-120vw); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes walk-out {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(120vw); }
+}
+
+.postman { width: 100%; }
+
+.postman-wrap--walking-in .limb,
+.postman-wrap--walking-out .limb {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: swing 0.5s ease-in-out infinite alternate;
+}
+
+.postman-wrap--walking-in #leg-front,
+.postman-wrap--walking-in #arm-back,
+.postman-wrap--walking-out #leg-front,
+.postman-wrap--walking-out #arm-back { animation-delay: 0s; }
+
+.postman-wrap--walking-in #leg-back,
+.postman-wrap--walking-in #arm-front,
+.postman-wrap--walking-out #leg-back,
+.postman-wrap--walking-out #arm-front { animation-delay: 0.5s; }
+
+@keyframes swing {
+  from { transform: rotate(-14deg); }
+  to   { transform: rotate(14deg); }
+}
+
+/* smile — hidden until the postman greets/gifts something */
+#smile { opacity: 0; transition: opacity 0.3s ease; }
+.postman--smile #smile { opacity: 1; }
+
+/* gentle wave before he walks off */
+.postman--waving #arm-front {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: wave 0.55s ease-in-out 3;
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-55deg); }
+}
+
+.postman-lilies {
+  transform-box: fill-box;
+  transform-origin: 50% 85%;
+  opacity: 1;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.postman-lilies--given {
+  opacity: 0;
+  transform: translateY(14px) scale(0.7);
+}
+
+#hand-envelope {
+  transition: opacity 0.5s ease;
+}
+
+.postman--envelope-given #hand-envelope {
+  opacity: 0;
+}
+
+/* the bouquet she keeps, pinned in a corner for the rest of the story */
+.kept-lilies {
+  position: fixed;
+  left: 4vw;
+  bottom: 3vh;
+  z-index: 6;
+  width: min(30vw, 120px);
+  opacity: 0;
+  transform: translateY(16px) scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.9s ease, transform 0.9s ease;
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.35));
+}
+
+.kept-lilies--show {
+  opacity: 0.92;
+  transform: translateY(0) scale(1);
+}
+
+/* =========================================================================
+   SCENE 3 — ENVELOPE
+   ========================================================================= */
+
+.envelope-hit {
+  padding: 0;
+  display: block;
+  animation: env-arrive 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both, env-bob 3s ease-in-out 0.9s infinite;
+}
+
+@keyframes env-arrive {
+  from { transform: translateY(-40px) scale(0.85); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes env-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.envelope {
+  position: relative;
+  width: min(70vw, 260px);
+  aspect-ratio: 3 / 2;
+  transition: transform 0.5s ease;
+}
+
+/* girly sticker accents — a few hand-placed doodles, kept out of the way
+   of the actual text so the letter stays easy to read */
+.sticker {
+  position: absolute;
+  z-index: 6;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.sticker--heart { color: #e8618f; }
+.sticker--flower { color: #f2a44c; }
+.sticker--star { color: var(--gold); }
+
+.sticker--env-tl { top: -14px; left: -10px; font-size: 1.6rem; transform: rotate(-18deg); }
+.sticker--env-br { bottom: -12px; right: -8px; font-size: 1.8rem; transform: rotate(14deg); }
+
+.washi-tape {
+  position: absolute;
+  top: -10px;
+  right: 14%;
+  width: 46px;
+  height: 18px;
+  background: repeating-linear-gradient(45deg, #f7c6d4, #f7c6d4 6px, #f2b0c4 6px, #f2b0c4 12px);
+  opacity: 0.8;
+  transform: rotate(8deg);
+  z-index: 6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.sticker--letter-tr { top: 10px; right: 14px; font-size: 1.3rem; transform: rotate(12deg); }
+.sticker--letter-bl { bottom: 12px; left: 12px; font-size: 1.4rem; transform: rotate(-10deg); }
+.sticker--letter-tl { top: 14px; left: 18px; font-size: 1.1rem; }
+
+.envelope-hit--zoom .envelope {
+  animation: env-zoom 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes env-zoom {
+  to { transform: scale(1.15) translateY(-6px); }
+}
+
+.envelope__back,
+.envelope__front {
+  position: absolute;
+  inset: 0;
+  background: var(--cream);
+  border-radius: 6px;
+}
+
+.envelope__back { box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
+
+.envelope__front {
+  clip-path: polygon(0 100%, 50% 42%, 100% 100%);
+  background: var(--cream-dim);
+  z-index: 2;
+}
+
+.envelope__letter-peek {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: -6%;
+  height: 60%;
+  background: #fffdf7;
+  border-radius: 3px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.5s;
+}
+
+.envelope__flap {
+  position: absolute;
+  inset: 0;
+  background: var(--cream);
+  clip-path: polygon(0 0, 50% 55%, 100% 0);
+  border-radius: 6px 6px 0 0;
+  transform-origin: top center;
+  transition: transform 0.7s cubic-bezier(0.5, 0, 0.3, 1);
+  z-index: 3;
+}
+
+.envelope__seal {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 15%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 30%, var(--blush), #c98a9a 70%);
+  border-radius: 50%;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  z-index: 4;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* opened state, toggled via JS by adding .envelope--open */
+.envelope--open .envelope__flap { transform: rotateX(180deg); }
+.envelope--open .envelope__seal { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+.envelope--open .envelope__letter-peek { opacity: 1; }
+
+/* =========================================================================
+   SCENE 5 — LETTER
+   ========================================================================= */
+
+.letter-paper {
+  position: relative;
+  background: linear-gradient(180deg, #fffdf7, var(--cream));
+  color: var(--ink);
+  border-radius: 8px;
+  padding: clamp(20px, 6vw, 36px);
+  width: min(88vw, 420px);
+  max-height: 62vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+  text-align: left;
+  transform: translateY(30px) scale(0.96);
+  opacity: 0;
+  animation: letter-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes letter-rise {
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.letter-greeting {
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1.4rem;
+  margin: 0 0 0.8em;
+}
+
+.letter-body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin: 0 0 1em;
+  min-height: 3em;
+}
+
+.letter-body .caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--ink);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+.letter-signoff {
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  color: #7a5c46;
+  margin: 0.6em 0 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.letter-signoff--show { opacity: 1; }
+
+/* =========================================================================
+   SCENE 6 — TIMER  (floral glass card)
+   ========================================================================= */
+
+.timer-card {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(165deg, rgba(255,250,242,0.97), rgba(240,223,200,0.93));
+  border-radius: 20px;
+  padding: clamp(24px, 7vw, 34px) clamp(18px, 6vw, 26px);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.6);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px) scale(0.97);
+  animation: card-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes card-rise {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.timer-card__petal {
+  position: absolute;
+  width: 60px;
+  height: 84px;
+  background: linear-gradient(160deg, #fffdf7, var(--cream-dim));
+  border-radius: 50% 50% 50% 4%;
+  opacity: 0.4;
+}
+
+.timer-card__petal--tl { top: -22px; left: -18px; transform: rotate(-30deg); }
+.timer-card__petal--br { bottom: -22px; right: -18px; transform: rotate(150deg); }
+
+.timer-card__eyebrow {
+  position: relative;
+  margin: 0 0 1.1em;
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: #7a3d55;
+  text-align: center;
+}
+
+.timer-card__caption {
+  position: relative;
+  margin: 1.1em 0 0;
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #6b4a3e;
+  text-align: center;
+}
+
+.timer {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.timer__unit {
+  background: #fffdf9;
+  border: 1px solid rgba(180, 120, 140, 0.18);
+  border-radius: 12px;
+  padding: 0.8em 0.3em;
+  box-shadow: 0 4px 14px rgba(122, 61, 85, 0.08);
+}
+
+.timer__value {
+  display: block;
+  font-family: var(--font-script);
+  font-size: clamp(1.5rem, 6vw, 1.9rem);
+  font-weight: 700;
+  color: #c23566;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer__label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9a7a6a;
+  opacity: 0.85;
+  margin-top: 0.3em;
+}
+
+/* =========================================================================
+   MODAL — final note
+   ========================================================================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(13, 14, 28, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap);
+}
+
+.modal__card {
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 2em 1.6em;
+  max-width: 420px;
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+}
+
+.modal__text {
+  font-family: var(--font-script);
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0 0 1.2em;
+}
+
+/* =========================================================================
+   MUSIC TOGGLE
+   ========================================================================= */
+
+.music-toggle {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(240,223,168,0.3);
+  color: var(--gold-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.music-toggle--playing .music-toggle__icon { animation: note-bounce 0.6s ease-in-out infinite alternate; }
+
+@keyframes note-bounce {
+  to { transform: translateY(-2px); }
+}
+
+/* =========================================================================
+   SHOOTING STARS — occasional accent across the night sky
+   ========================================================================= */
+
+.shooting-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 6px 1px rgba(255,255,255,0.8);
+  animation: shoot 1.6s ease-in forwards;
+}
+
+.shooting-star::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 90px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8));
+  transform: translateY(-50%);
+}
+
+@keyframes shoot {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate(-260px, 220px); opacity: 0; }
+}
+
+/* =========================================================================
+   SPARKLE BURST — small gold sparkles at key handoff moments
+   ========================================================================= */
+
+.sparkle-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--gold-soft);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  animation: sparkle-pop 0.9s ease-out forwards;
+}
+
+@keyframes sparkle-pop {
+  0%   { transform: translate(0, 0) scale(0); opacity: 1; }
+  60%  { transform: translate(var(--sx), var(--sy)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--sx), var(--sy)) scale(0.4); opacity: 0; }
+}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+
+@media (min-width: 640px) {
+  .link-row { flex-direction: row; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
